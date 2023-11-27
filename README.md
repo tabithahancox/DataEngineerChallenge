@@ -11,3 +11,8 @@ Then clone the contents of this repo into it:
 git clone https://github.com/Sampuddy/DataEngineer-Challenge-master.git
 
 ## Objectives
+1. Create a query that calculates the average number of goals per game between 1900 and 2000.
+2. Create a query that counts the number of shootouts wins by country and arrange in alphabetical order.
+3. Create a reliable key that allows the joining together of goal scorers, results, and shootouts.
+4. Create a query that identifies which teams have won a penalty shootout after a 1-1 draw.
+5. Create a query that identifies the top goal scorer by tournament, and what percentage that equates to for all goals scored in the tournament.
