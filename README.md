@@ -10,6 +10,7 @@ During your interview you will be asked to present (in any way you like) your th
 git clone https://github.com/Sampuddy/DataEngineer-Challenge-master.git
 * You will find three csv files attached whih you will need to use to answer the below questions: 1.goalscorers.csv, results.csv & shootouts.csv
 * Add your answers to this file: https://github.com/Sampuddy/DataEngineer-Challenge-master/blob/main/answers
+* Once complete, push your repo, create a Public URL and share with Becky Mears.
 
 ## Objectives
 1. Create a query that calculates the average number of goals per game between 1900 and 2000.
