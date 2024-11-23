@@ -1,1 +1,43 @@
+#Q1
+
+import pandas as pd
+
+# Load the CSV goalscorers file into a DataFrame
+df = pd.read_csv('goalscorers.csv')
+
+# Convert date column to 'datetime'
+df['date'] = pd.to_datetime(df['date'])
+
+# Filter date column for dates we are intrested in
+filtered_df = df[(df['date'].dt.year >= 1900) & (df['date'].dt.year <= 2000)]
+
+# Group by the date, home team and away team, then count and sum goals for each game
+total_goals = filtered_df.groupby(['date', 'home_team', 'away_team']).size()
+
+# Calculate the average goals
+average_goals = total_goals.mean()
+print(average_goals)
+
+# Q2
+
+# Filter for times where the goal was a penalty
+winning_shootouts = df[df['penalty'] == True]
+
+# Set shootout_wins column to be the total shootouts won by each team
+shootout_wins = winning_shootouts.groupby('team').size().reset_index(name='shootout_wins')
+
+# Sort the columns by the country in alphabetical order
+shootout_wins = shootout_wins.sort_values('team')
+print(shootout_wins)
+
+# Q3
+
+
+
+for df in ['scorer', 'results', shootouts]:
+    df['date'] = pd.to_datetime(df['date'])
+    df['home_team'] = df['home_team'].str.strip().str.lower()
+    df['away_team'] = df['away_team'].str.strip().str.lower()
+
+
 
