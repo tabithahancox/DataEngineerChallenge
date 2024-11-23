@@ -2,42 +2,125 @@
 
 import pandas as pd
 
-# Load the CSV goalscorers file into a DataFrame
-df = pd.read_csv('goalscorers.csv')
+# Load CSV files
+results = pd.read_csv('results.csv')
+shootouts = pd.read_csv('shootouts.csv')
+goalscorers = pd.read_csv('goalscorers.csv')
+tournament = ['date', 'home_team', 'away_team']
 
 # Convert date column to 'datetime'
-df['date'] = pd.to_datetime(df['date'])
+goalscorers['date'] = pd.to_datetime(goalscorers['date'])
 
-# Filter date column for dates we are intrested in
-filtered_df = df[(df['date'].dt.year >= 1900) & (df['date'].dt.year <= 2000)]
+# Filter date column for years between 1900 and 2000
+filtered_goalscorers = goalscorers[(goalscorers['date'].dt.year >= 1900) & (goalscorers['date'].dt.year <= 2000)]
 
 # Group by the date, home team and away team, then count and sum goals for each game
-total_goals = filtered_df.groupby(['date', 'home_team', 'away_team']).size()
+total_goals = filtered_goalscorers.groupby(tournament).size()
 
 # Calculate the average goals
 average_goals = total_goals.mean()
+
 print(average_goals)
 
 # Q2
 
-# Filter for times where the goal was a penalty
-winning_shootouts = df[df['penalty'] == True]
-
 # Set shootout_wins column to be the total shootouts won by each team
-shootout_wins = winning_shootouts.groupby('team').size().reset_index(name='shootout_wins')
+shootout_wins = shootouts.groupby('winner').size().reset_index(name='shootout_wins')
 
 # Sort the columns by the country in alphabetical order
-shootout_wins = shootout_wins.sort_values('team')
+shootout_wins = shootout_wins.sort_values('winner')
+
 print(shootout_wins)
 
 # Q3
 
-
-
-for df in ['scorer', 'results', shootouts]:
+# Standardize the data
+for df in [results, shootouts, goalscorers]:
     df['date'] = pd.to_datetime(df['date'])
     df['home_team'] = df['home_team'].str.strip().str.lower()
     df['away_team'] = df['away_team'].str.strip().str.lower()
 
+# Create key
+for df in [results, shootouts, goalscorers]:
+    df['key'] = df['date'].dt.strftime('%Y/%m/%d') + "_" + df['home_team'] + "_" + df['away_team']
 
+print(df['key'])
 
+# Q4
+
+# Filter matches for ones that had 1-1 draw
+filtered_matches = results[(results['home_score'] == 1) & (results['away_score'] == 1)]
+
+# Merge the filtered results with the shootouts data
+merged_data = pd.merge(filtered_matches, shootouts, on=tournament)
+
+# Collect the data on the winning team
+winners_after_one_one = merged_data[['winner']]
+
+print(winners_after_one_one)
+
+# Q5
+
+# Count total goals for each match
+total_goals = goalscorers.groupby(tournament).size().reset_index(name = 'total_goals')
+
+# Count total goals for each scoring player in each match
+total_goals_per_player = goalscorers.groupby(['date', 'home_team', 'away_team', 'scorer']).size().reset_index(name='total_goals_per_player')
+
+# Find maximum scorer for each tournament
+max_scorer = total_goals_per_player.loc[total_goals_per_player.groupby(tournament)['total_goals_per_player'].idxmax()]
+top_goal_scorer = max_scorer[['date', 'home_team', 'away_team', 'scorer', 'total_goals_per_player']]
+
+# Merge total goals and number of goals for each 
+result = pd.merge(max_scorer, total_goals, on=tournament)
+
+# Calculate percentage
+result['percentage'] = (result['total_goals_per_player'] / result['total_goals']) * 100
+
+print(result['percentage'])     
+
+# Additional
+
+# Q1
+
+# Create an additional column that flags records with data quality issues in file goalscorers.csv
+
+# Create a flag for missing or invalid values
+goalscorers['data_quality_flag'] = 'Valid'
+
+# Flag missing values across all columns
+goalscorers.loc[goalscorers['date'].isna(), 'data_quality_flag'] = 'Missing date'
+goalscorers.loc[goalscorers['home_team'].isna(), 'data_quality_flag'] = 'Missing home_team'
+goalscorers.loc[goalscorers['away_team'].isna(), 'data_quality_flag'] = 'Missing away_team'
+goalscorers.loc[goalscorers['team'].isna(), 'data_quality_flag'] = 'Missing team'
+goalscorers.loc[goalscorers['scorer'].isna(), 'data_quality_flag'] = 'Missing scorer'
+goalscorers.loc[goalscorers['minute'].isna(), 'data_quality_flag'] = 'Missing minute'
+goalscorers.loc[goalscorers['own_goal'].isna(), 'data_quality_flag'] = 'Missing own_goal'
+goalscorers.loc[goalscorers['penalty'].isna(), 'data_quality_flag'] = 'Missing penalty'
+
+# Flag negative minutes
+goalscorers.loc[goalscorers['minute'] < 0, 'data_quality_flag'] = 'Invalid minute'
+
+# Flag home teams, away teams, teams or scorers that contain non-alphabetical characters
+goalscorers.loc[goalscorers['home_team'].str.contains('[^a-zA-Z ]', na=False), 'data_quality_flag'] = 'Invalid home_team Name'
+goalscorers.loc[goalscorers['away_team'].str.contains('[^a-zA-Z ]', na=False), 'data_quality_flag'] = 'Invalid away_team Name'
+goalscorers.loc[goalscorers['team'].str.contains('[^a-zA-Z ]', na=False), 'data_quality_flag'] = 'Invalid team Name'
+
+# Flag own goals or penaltys that don't contain TRUE/FALSE
+valid_values = ['TRUE', 'FALSE']
+goalscorers.loc[goalscorers['own_goal'].isin(valid_values), 'data_quality_flag'] = 'Invalid own_goal'
+goalscorers.loc[goalscorers['penalty'].isin(valid_values), 'data_quality_flag'] = 'Invalid penalty'
+
+# Flag dates that are not in a date format
+goalscorers['valid_date'] = pd.to_datetime(goalscorers['date'], errors='coerce')
+goalscorers.loc[goalscorers['valid_date'].isna(), 'data_quality_flag'] = 'Invalid Date'
+
+# Delete 'valid_date' column
+goalscorers.drop(columns=['valid_date'], inplace=True)
+
+print(goalscorers[['date', 'home_team', 'away_team', 'team', 'scorer', 'minute', 'own_goal', 'penalty', 'data_quality_flag']])
+
+# Q2
+
+# Filter out rows with invalid data
+valid_goalscorers = goalscorers[goalscorers['data_quality_flag'] == 'Valid']
